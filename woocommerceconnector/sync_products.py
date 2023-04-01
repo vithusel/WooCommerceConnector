@@ -92,7 +92,7 @@ def create_item(woocommerce_item, warehouse, has_variant=0, attributes=None, var
     if not item_code:
         item_dict['naming_series'] = woocommerce_settings.item_code_naming_series
         # for variants, apply WooCommerce ID (because naming series is not applicable)
-        item_dict['item_code'] = str(woocommerce_item.get("id"))
+        item_dict['item_code'] = str(woocommerce_item.get("sku"))
     else:
         item_dict['item_code'] = item_code
         
@@ -127,9 +127,9 @@ def create_item(woocommerce_item, warehouse, has_variant=0, attributes=None, var
 def get_item_code(woocommerce_item, woocommerce_settings):
     item_code = ''
     if woocommerce_settings.item_code_based_on == 'WooCommerce ID':
-        item_code = str(woocommerce_item.get("id"))
+        item_code = str(woocommerce_item.get("sku"))
     elif woocommerce_settings.item_code_based_on == 'WooCommerce ID + Name':
-        item_code = str(woocommerce_item.get("id")) + str(woocommerce_item.get("name"))
+        item_code = str(woocommerce_item.get("sku")) + str(woocommerce_item.get("name"))
     elif woocommerce_settings.item_code_based_on == 'WooCommerce Name':
         item_code = str(woocommerce_item.get("name"))
     elif woocommerce_settings.item_code_based_on == 'Random Hash':

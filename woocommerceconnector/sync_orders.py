@@ -222,16 +222,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         so.flags.ignore_mandatory = True
 
         # alle orders in ERP = submitted
-        try:
-            so.save(ignore_permissions=True)
-        except ValidationError as e:
-        # check if the error message is due date being before posting date
-        if "Due Date in the Payment Terms table cannot be before Posting Date" in str(e):
-            # handle the error gracefully, such as logging it
-            print("WARNING: Due Date in the Payment Terms table is before Posting Date. Skipping order creation.")
-        else:
-            # re-raise the error if it's a different type of ValidationError
-            raise e
+        so.save(ignore_permissions=True)
         so.submit()
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)

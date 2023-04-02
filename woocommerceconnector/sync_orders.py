@@ -223,7 +223,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
         # alle orders in ERP = submitted
         try:
-        so.save(ignore_permissions=True)
+            so.save(ignore_permissions=True)
         except ValidationError as e:
         # check if the error message is due date being before posting date
         if "Due Date in the Payment Terms table cannot be before Posting Date" in str(e):

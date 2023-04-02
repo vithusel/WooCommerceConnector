@@ -447,7 +447,7 @@ def close_synced_woocommerce_order(wooid):
         "status": "completed"
     }
     try:
-        put_request("orders/{0}".format(wooid), order_data)
+        put_request("orders/{0}".format(str(wooid)), order_data)
             
     except requests.exceptions.HTTPError as e:
         make_woocommerce_log(title=e.message, status="Error", method="close_synced_woocommerce_order", message=frappe.get_traceback(),

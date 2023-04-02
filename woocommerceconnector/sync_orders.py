@@ -34,7 +34,7 @@ def sync_woocommerce_orders():
                         make_woocommerce_log(status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
                             request_data=woocommerce_order, exception=True)
                     except Exception as e:
-                        if e.args and e.args[0] and str(e.args[0]).startswith("402"):
+                        if e.args and e.args[0] and e.args[0].decode("utf-8").startswith("402"):
                             raise e
                         else:
                             make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
@@ -203,7 +203,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
             "customer": customer,
             "customer_group": woocommerce_settings.customer_group,  # hard code group, as this was missing since v12
-            "delivery_date": nowdate(),
+            #"delivery_date": nowdate(),
             "company": woocommerce_settings.company,
             "selling_price_list": woocommerce_settings.price_list,
             "ignore_pricing_rule": 1,

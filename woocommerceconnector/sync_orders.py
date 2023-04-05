@@ -27,25 +27,30 @@ def sync_woocommerce_orders():
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
             if not so:
                 if valid_customer_and_product(woocommerce_order):
-                    try:
-                        create_order(woocommerce_order, woocommerce_settings)
-                        frappe.local.form_dict.count_dict["orders"] += 1
+                    payment_status = woocommerce_order.get("payment_status")
+                    if payment_status == "completed":
+                        try:
+                            create_order(woocommerce_order, woocommerce_settings)
+                            frappe.local.form_dict.count_dict["orders"] += 1
 
-                    except woocommerceError as e:
-                        make_woocommerce_log(status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
-                            request_data=woocommerce_order, exception=True)
-                    except Exception as e:
-                        if e.args and e.args[0]:
-                            error_message = e.args[0]
-                            if isinstance(error_message, bytes):
-                                error_message = error_message.decode("utf-8")
-                            if error_message.startswith("402"):
-                                raise e
-                            else:
-                                make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
-                                    request_data=woocommerce_order, exception=True)
-            # close this order as synced
-            close_synced_woocommerce_order(woocommerce_order.get("id"))
+                        except woocommerceError as e:
+                            make_woocommerce_log(status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
+                                request_data=woocommerce_order, exception=True)
+                        except Exception as e:
+                            if e.args and e.args[0]:
+                                error_message = e.args[0]
+                                if isinstance(error_message, bytes):
+                                    error_message = error_message.decode("utf-8")
+                                if error_message.startswith("402"):
+                                    raise e
+                                else:
+                                    make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
+                                        request_data=woocommerce_order, exception=True)
+                    else:
+                        make_woocommerce_log(title="Payment not completed", status="Info", method="sync_woocommerce_orders", message="Skipping order with payment status: {}".format(payment_status), request_data=woocommerce_order, exception=False)
+                else:
+                    make_woocommerce_log(title="Invalid customer or product", status="Info", method="sync_woocommerce_orders", message="Skipping order with invalid customer or product", request_data=woocommerce_order, exception=False)
+
 
                 
 def get_woocommerce_order_status_for_import():
@@ -438,27 +443,3 @@ def get_tax_account_head(tax):
         frappe.throw("Tax Account not specified for woocommerce Tax {0}".format(tax.get("name")))
 
     return tax_account
-
-def close_synced_woocommerce_orders():
-    for woocommerce_order in get_woocommerce_orders():
-        if woocommerce_order.get("status").lower() != "cancelled":
-            order_data = {
-                "status": "completed"
-            }
-            try:
-                put_request("orders/{0}".format(woocommerce_order.get("id")), order_data)
-                    
-            except requests.exceptions.HTTPError as e:
-                make_woocommerce_log(title=e, status="Error", method="close_synced_woocommerce_orders", message=frappe.get_traceback(),
-                    request_data=woocommerce_order, exception=True)
-
-def close_synced_woocommerce_order(wooid):
-    order_data = {
-        "status": "completed"
-    }
-    try:
-        put_request("orders/{0}".format(str(wooid)), order_data)
-            
-    except requests.exceptions.HTTPError as e:
-        make_woocommerce_log(title=e.message, status="Error", method="close_synced_woocommerce_order", message=frappe.get_traceback(),
-            request_data=woocommerce_order, exception=True)

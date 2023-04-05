@@ -9,6 +9,7 @@ from .woocommerce_requests import get_request, get_woocommerce_orders, get_wooco
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, make_sales_invoice
 import requests.exceptions
 import base64, requests, datetime, os
+from datetime import datetime, timedelta
 
 
 def sync_orders():
@@ -196,6 +197,8 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             tax_rules = tax_rules[0]['tax_rule']
         else:
             tax_rules = ""
+        posting_date = woocommerce_order.get("date_created")[:10]
+        due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
             "naming_series": woocommerce_settings.sales_order_series or "SO-woocommerce-",
@@ -217,7 +220,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "customer_address": billing_address,
             "shipping_address_name": shipping_address,
             "posting_date": woocommerce_order.get("date_created")[:10],
-            "due_date": woocommerce_order.get("date_created")[:10]
+            "due_date": due_date
         })
 
         so.flags.ignore_mandatory = True

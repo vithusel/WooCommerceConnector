@@ -203,7 +203,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         else:
             tax_rules = ""
         posting_date = woocommerce_order.get("date_created")[:10]
-        due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
             "naming_series": woocommerce_settings.sales_order_series or "SO-woocommerce-",
@@ -233,6 +233,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         # alle orders in ERP = submitted
         so.save(ignore_permissions=True)
         so.submit()
+        frappe.log_error("Posting Date: {0}, Due Date: {1}".format(posting_date, due_date))
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)
         #elif woocommerce_order.get("status") in ("cancelled", "refunded", "failed"):

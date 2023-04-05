@@ -216,6 +216,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "taxes_and_charges": tax_rules,
             "customer_address": billing_address,
             "shipping_address_name": shipping_address,
+            "due_date": (datetime.strptime(posting_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
             "posting_date": woocommerce_order.get("date_created")[:10]          # pull posting date from WooCommerce
         })
 

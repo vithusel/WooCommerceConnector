@@ -15,15 +15,25 @@ from datetime import datetime, timedelta
 def sync_orders():
     sync_woocommerce_orders()
 
+from datetime import datetime, timedelta
+
 def sync_woocommerce_orders():
     frappe.local.form_dict.count_dict["orders"] = 0
     woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
     woocommerce_order_status_for_import = get_woocommerce_order_status_for_import()
     if not len(woocommerce_order_status_for_import) > 0:
         woocommerce_order_status_for_import = ['processing']
+    
+    max_order_age_days = 20
+    max_order_age = datetime.now() - timedelta(days=max_order_age_days)
         
     for woocommerce_order_status in woocommerce_order_status_for_import:
         for woocommerce_order in get_woocommerce_orders(woocommerce_order_status):
+            order_date = datetime.strptime(woocommerce_order.get("date_created"), "%Y-%m-%dT%H:%M:%S")
+            if order_date < max_order_age:
+                make_woocommerce_log(title="Order too old", status="Info", method="sync_woocommerce_orders", message="Skipping order older than {} days".format(max_order_age_days), request_data=woocommerce_order, exception=False)
+                continue
+                
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
             if not so:
                 if valid_customer_and_product(woocommerce_order):

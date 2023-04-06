@@ -248,7 +248,6 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         # alle orders in ERP = submitted
         so.save(ignore_permissions=True)
         so.submit()
-        frappe.log_error("Posting Date: {0}, Due Date: {1}".format(posting_date, due_date))
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)
         #elif woocommerce_order.get("status") in ("cancelled", "refunded", "failed"):

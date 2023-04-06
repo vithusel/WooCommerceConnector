@@ -38,7 +38,7 @@ def sync_woocommerce_orders():
             if not so:
                 if valid_customer_and_product(woocommerce_order):
                     payment_status = woocommerce_order.get("payment_status")
-                    make_woocommerce_log(title="Payment status", status="Info", method="sync_woocommerce_orders", message="Payment status for order {}: {}".format(woocommerce_order.get("id"), payment_status), request_data=woocommerce_order, exception=False)
+                    make_woocommerce_log(title="Payment status", status="Error", method="sync_woocommerce_orders", message="Payment status for order {}: {}".format(woocommerce_order.get("id"), payment_status), request_data=woocommerce_order, exception=False)
                     if payment_status == "completed":
                         try:
                             create_order(woocommerce_order, woocommerce_settings)

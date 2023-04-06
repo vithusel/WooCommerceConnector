@@ -37,8 +37,9 @@ def sync_woocommerce_orders():
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
             if not so:
                 if valid_customer_and_product(woocommerce_order):
-                    payment_status = woocommerce_order.get("needs_payment")
-                    if needs_payment == "false":
+                    payment_status = woocommerce_order.get("payment_status")
+                    make_woocommerce_log(title="Payment status", status="Info", method="sync_woocommerce_orders", message="Payment status for order {}: {}".format(woocommerce_order.get("id"), payment_status), request_data=woocommerce_order, exception=False)
+                    if payment_status == "completed":
                         try:
                             create_order(woocommerce_order, woocommerce_settings)
                             frappe.local.form_dict.count_dict["orders"] += 1

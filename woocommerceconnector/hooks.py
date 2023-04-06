@@ -81,7 +81,7 @@ doc_events = {
 scheduler_events = {
     "cron": {
         "*/10 * * * *": [
-            "woocommerceconnector.api.sync_woocommerce"
+            "woocommerceconnector.api.check_hourly_sync"
         ]
     }
 }

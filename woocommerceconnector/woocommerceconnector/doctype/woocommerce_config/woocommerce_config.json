@@ -87,7 +87,7 @@
    "default": "0",
    "fieldname": "hourly_sync",
    "fieldtype": "Check",
-   "label": "Hourly synchronization"
+   "label": "Enable Auto Sync"
   },
   {
    "default": "Public",

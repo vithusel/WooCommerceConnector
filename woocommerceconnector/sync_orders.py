@@ -57,9 +57,9 @@ def sync_woocommerce_orders():
                                     make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
                                         request_data=woocommerce_order, exception=True)
                     else:
-                        make_woocommerce_log(title="Payment not completed", status="Info", method="sync_woocommerce_orders", message="Skipping order with payment status: {}".format(payment_status), request_data=woocommerce_order, exception=False)
+                        make_woocommerce_log(title="Payment not completed", status="Error", method="sync_woocommerce_orders", message="Skipping order with payment status: {}".format(payment_status), request_data=woocommerce_order, exception=False)
                 else:
-                    make_woocommerce_log(title="Invalid customer or product", status="Info", method="sync_woocommerce_orders", message="Skipping order with invalid customer or product", request_data=woocommerce_order, exception=False)
+                    make_woocommerce_log(title="Invalid customer or product", status="Error", method="sync_woocommerce_orders", message="Skipping order with invalid customer or product", request_data=woocommerce_order, exception=False)
 
 
                 

@@ -17,50 +17,66 @@ def sync_orders():
 
 from datetime import datetime, timedelta
 
+# Function to synchronize WooCommerce orders with Frappe's Sales Orders
 def sync_woocommerce_orders():
+    # Initialize order count to zero
     frappe.local.form_dict.count_dict["orders"] = 0
+    
+    # Get WooCommerce settings from WooCommerce Config document
     woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
+    
+    # Get WooCommerce order status for import, if not available, set default to ['processing']
     woocommerce_order_status_for_import = get_woocommerce_order_status_for_import()
     if not len(woocommerce_order_status_for_import) > 0:
         woocommerce_order_status_for_import = ['processing']
     
+    # Set maximum order age to 20 days from current date and time
     max_order_age_days = 20
     max_order_age = datetime.now() - timedelta(days=max_order_age_days)
-        
+    
+    # Loop through WooCommerce order statuses for import
     for woocommerce_order_status in woocommerce_order_status_for_import:
+        # Loop through WooCommerce orders with the current status
         for woocommerce_order in get_woocommerce_orders(woocommerce_order_status):
+            # Convert order date to datetime object
             order_date = datetime.strptime(woocommerce_order.get("date_created"), "%Y-%m-%dT%H:%M:%S")
+            
+            # Skip orders older than the maximum order age
             if order_date < max_order_age:
-                make_woocommerce_log(title="Order too old", status="Error", method="sync_woocommerce_orders", message="Skipping order older than {} days".format(max_order_age_days), request_data=woocommerce_order, exception=False)
+                make_woocommerce_log(title="Order too old", status="Error", method="sync_woocommerce_orders", 
+                                      message="Skipping order older than {} days".format(max_order_age_days), 
+                                      request_data=woocommerce_order, exception=False)
                 continue
-                
+            
+            # Check if Sales Order already exists for the WooCommerce order
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
+            
+            # If Sales Order does not exist, create one if the customer and product are valid
             if not so:
                 if valid_customer_and_product(woocommerce_order):
-                    payment_status = woocommerce_order.get("payment_status")
-                    make_woocommerce_log(title="Payment status", status="Error", method="sync_woocommerce_orders", message="Payment status for order {}: {}".format(woocommerce_order.get("id"), payment_status), request_data=woocommerce_order, exception=False)
-                    if payment_status == "completed":
-                        try:
-                            create_order(woocommerce_order, woocommerce_settings)
-                            frappe.local.form_dict.count_dict["orders"] += 1
+                    try:
+                        create_order(woocommerce_order, woocommerce_settings)
+                        frappe.local.form_dict.count_dict["orders"] += 1
 
-                        except woocommerceError as e:
-                            make_woocommerce_log(status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
-                                request_data=woocommerce_order, exception=True)
-                        except Exception as e:
-                            if e.args and e.args[0]:
-                                error_message = e.args[0]
-                                if isinstance(error_message, bytes):
-                                    error_message = error_message.decode("utf-8")
-                                if error_message.startswith("402"):
-                                    raise e
-                                else:
-                                    make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders", message=frappe.get_traceback(),
-                                        request_data=woocommerce_order, exception=True)
-                    else:
-                        make_woocommerce_log(title="Payment not completed", status="Error", method="sync_woocommerce_orders", message="Skipping order with payment status: {}".format(payment_status), request_data=woocommerce_order, exception=False)
-                else:
-                    make_woocommerce_log(title="Invalid customer or product", status="Error", method="sync_woocommerce_orders", message="Skipping order with invalid customer or product", request_data=woocommerce_order, exception=False)
+                    # Catch WooCommerce error and log the traceback
+                    except woocommerceError as e:
+                        make_woocommerce_log(status="Error", method="sync_woocommerce_orders", 
+                                                 message=frappe.get_traceback(), request_data=woocommerce_order, 
+                                                 exception=True)
+                    # Catch other exceptions and log the traceback
+                    except Exception as e:
+                        if e.args and e.args[0]:
+                            error_message = e.args[0]
+                            if isinstance(error_message, bytes):
+                                error_message = error_message.decode("utf-8")
+                            if error_message.startswith("402"):
+                                raise e
+                            else:
+                                make_woocommerce_log(title=e.message, status="Error", 
+                                                         method="sync_woocommerce_orders", 
+                                                         message=frappe.get_traceback(), 
+                                                         request_data=woocommerce_order, exception=True)
+
 
 
                 

@@ -41,12 +41,9 @@ def sync_woocommerce_orders():
             # Convert order date to datetime object
             order_date = datetime.strptime(woocommerce_order.get("date_created"), "%Y-%m-%dT%H:%M:%S")
             
-            # Skip orders older than the maximum order age
-            if order_date < max_order_age:
-                make_woocommerce_log(title="Order too old", status="Error", method="sync_woocommerce_orders", 
-                                      message="Skipping order older than {} days".format(max_order_age_days), 
-                                      request_data=woocommerce_order, exception=False)
-                continue
+        # Skip orders older than the maximum order age
+        if order_date < max_order_age:
+            continue  # Skip processing this order
             
             # Check if Sales Order already exists for the WooCommerce order
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")

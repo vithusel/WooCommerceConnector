@@ -261,8 +261,6 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
         # Set payment status as paid
         so.payment_status = "Paid"
-        so.make_payment_entry()
-        so.update_status()
 
         # Save and submit Sales Order
         so.save(ignore_permissions=True)

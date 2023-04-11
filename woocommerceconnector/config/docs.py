@@ -1,5 +1,5 @@
-source_link = "https://github.com/libracore/woocommerceconnector"
-docs_base_url = "https://github.com/libracore/woocommerceconnector"
+source_link = "https://github.com/vithusel/WooCommerceConnector"
+docs_base_url = "https://github.com/vithusel/WooCommerceConnector"
 headline = "ERPNext WooCommerce Connector"
 sub_heading = "Sync transactions between WooCommerce and ERPNext"
 long_description = """ERPNext WooCommerce Connector will sync data between your woocommerce and ERPNext accounts.

@@ -4,13 +4,13 @@ from . import __version__ as app_version
 
 app_name = "woocommerceconnector"
 app_title = "WooCommerce Connector"
-app_publisher = "libracore"
+app_publisher = "Vithusel Services"
 app_description = "WooCommerce Connector for ERPNext"
 app_icon = "fa fa-wordpress"
 app_color = "#bc3bff"
-app_email = "info@libracore.com"
+app_email = "support@vithuselservices.co.uk"
 app_license = "AGPL"
-app_url = "https://github.com/libracore/woocommerceconnector"
+app_url = "https://github.com/vithusel/WooCommerceConnector"
 
 fixtures = ["Custom Field"]
 # Includes in <head>

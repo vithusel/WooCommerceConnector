@@ -237,7 +237,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
-            "naming_series": str(woocommerce_order.get("id")),
+            "naming_series": str(woocommerce_order.get("id"))[:5],
             "woocommerce_order_id": woocommerce_order.get("id"),
             "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
             "customer": customer,

@@ -219,7 +219,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         frappe.log_error("No customer found. This should never happen.")
 
     # Assuming woocommerce_order.get("id") returns an integer value
-    naming_series = "{:05d}".format(int(woocommerce_order.get("id")))[:5]
+    naming_series = str(int(woocommerce_order.get("id")))
 
     # Fetch sales order name using naming_series and woocommerce_order_id
     so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id"), "name": ("like", "{}%".format(naming_series))}, "name")

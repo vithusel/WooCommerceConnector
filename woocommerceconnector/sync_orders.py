@@ -218,7 +218,12 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
     else:
         frappe.log_error("No customer found. This should never happen.")
 
-    so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
+    # Assuming woocommerce_order.get("id") returns an integer value
+    naming_series = "{:05d}".format(woocommerce_order.get("id"))[:5]
+
+    # Fetch sales order name using naming_series and woocommerce_order_id
+    so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id"), "name": ("like", "{}%".format(naming_series))}, "name")
+
     if not so:
         # get shipping/billing address
         shipping_address = get_customer_address_from_order('Shipping', woocommerce_order, customer)
@@ -237,7 +242,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
-            "naming_series": str(woocommerce_order.get("id")).rstrip("0")[:5],
+            "naming_series": naming_series,
             "woocommerce_order_id": woocommerce_order.get("id"),
             "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
             "customer": customer,

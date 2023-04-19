@@ -224,10 +224,6 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
     # Fetch sales order name using naming_series and woocommerce_order_id
     so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id"), "name": ("like", "{}%".format(naming_series))}, "name")
 
-    make_woocommerce_log(title="create sales order", status="Success", method="create_sales_order",
-                     message="create sales_order", request_data=woocommerce_order, exception=False,
-                     naming_series=naming_series, woocommerce_order_id=woocommerce_order.get("id"))
-
     if not so:
         # get shipping/billing address
         shipping_address = get_customer_address_from_order('Shipping', woocommerce_order, customer)

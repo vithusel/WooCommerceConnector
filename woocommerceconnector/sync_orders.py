@@ -233,9 +233,11 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             tax_rules = tax_rules[0]['tax_rule']
         else:
             tax_rules = ""
+        # get the current date
+        today = datetime.today().strftime('%Y-%m-%d')
         posting_date = woocommerce_order.get("date_created")[:10]
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
-        delivery_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
+        delivery_date = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
             "naming_series": str(woocommerce_order.get("id")),

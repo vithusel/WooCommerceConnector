@@ -235,6 +235,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             tax_rules = ""
         posting_date = woocommerce_order.get("date_created")[:10]
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
+        delivery_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         so = frappe.get_doc({
             "doctype": "Sales Order",
             "naming_series": str(woocommerce_order.get("id")),
@@ -242,7 +243,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
             "customer": customer,
             "customer_group": woocommerce_settings.customer_group,  # hard code group, as this was missing since v12
-            #"delivery_date": nowdate(),
+            "delivery_date": delivery_date,
             "company": woocommerce_settings.company,
             "selling_price_list": woocommerce_settings.price_list,
             "ignore_pricing_rule": 1,

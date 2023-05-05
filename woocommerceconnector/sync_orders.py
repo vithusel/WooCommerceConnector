@@ -261,10 +261,6 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "posting_date": woocommerce_order.get("date_created")[:10],
             "due_date": due_date
         })
-        make_woocommerce_log(title=e.message, status="Error", method="sync_woocommerce_orders",
-                     message=frappe.get_traceback(), request_data={
-                         "delivery_date": delivery_date
-                     }, exception=True)
 
         so.flags.ignore_mandatory = True
         # Save and submit Sales Order

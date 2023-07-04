@@ -106,23 +106,30 @@ def create_item(woocommerce_item, warehouse, has_variant=0, attributes=None, var
     
     #item_dict["web_long_description"] = item_dict["woocommerce_description"]
     
-    if not is_item_exists(item_dict, attributes, variant_of=variant_of, woocommerce_item_list=woocommerce_item_list):
-        item_details = get_item_details(woocommerce_item)
+item_details = get_item_details(woocommerce_item)
 
-        if not item_details:
-            
-            new_item = frappe.get_doc(item_dict)
-            new_item.insert()
-            name = new_item.name
+if not is_item_exists(item_dict, attributes, variant_of=variant_of, woocommerce_item_list=woocommerce_item_list):
+    if not item_details:
+        new_item = frappe.get_doc(item_dict)
+        new_item.insert()
+        name = new_item.name
+    else:
+        update_item(item_details, item_dict)
+        name = item_details.name
 
-        else:
-            update_item(item_details, item_dict)
-            name = item_details.name
+    if not has_variant:
+        add_to_price_list(woocommerce_item, name)
 
-        if not has_variant:
-            add_to_price_list(woocommerce_item, name)
-    
-        frappe.db.commit()
+else:
+    # Item already exists, force write it by updating
+    update_item(item_details, item_dict)
+    name = item_details.name
+
+    if not has_variant:
+        add_to_price_list(woocommerce_item, name)
+
+frappe.db.commit()
+
         
 def get_item_code(woocommerce_item, woocommerce_settings):
     item_code = ''

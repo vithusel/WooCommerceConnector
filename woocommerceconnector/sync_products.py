@@ -126,32 +126,34 @@ def create_item(woocommerce_item, warehouse, has_variant=0, attributes=None, var
 
 # Remove the condition to check if the item already exists
 # if not is_item_exists(item_dict, attributes, variant_of=variant_of, woocommerce_item_list=woocommerce_item_list):
-item_details = get_item_details(woocommerce_item)
+if not is_item_exists(item_dict, attributes, variant_of=variant_of, woocommerce_item_list=woocommerce_item_list):
+    item_details = get_item_details(woocommerce_item)
 
-if not item_details:
-    new_item = frappe.get_doc(item_dict)
-    new_item.insert()
-    name = new_item.name
-    log_message = "Item '{}' created.".format(name)
-else:
-    update_item(item_details, item_dict)
-    name = item_details.name
-    log_message = "Item '{}' updated.".format(name)
+    if not item_details:
+        new_item = frappe.get_doc(item_dict)
+        new_item.insert()
+        name = new_item.name
+        log_message = "Item '{}' created.".format(name)
+    else:
+        update_item(item_details, item_dict)
+        name = item_details.name
+        log_message = "Item '{}' updated.".format(name)
 
-if not has_variant:
-    add_to_price_list(woocommerce_item, name)
+    if not has_variant:
+        add_to_price_list(woocommerce_item, name)
+    
+    # Logging
+    make_woocommerce_log(
+        title="Item Sync",
+        status="Success",
+        method="create_item",
+        message=log_message,
+        request_data=woocommerce_item,
+        exception=False
+    )
 
-# Logging
-make_woocommerce_log(
-    title="Item Sync",
-    status="Success",
-    method="create_item",
-    message=log_message,
-    request_data=woocommerce_item,
-    exception=False
-)
+    frappe.db.commit()
 
-frappe.db.commit()
 
 
 def get_item_code(woocommerce_item, woocommerce_settings):

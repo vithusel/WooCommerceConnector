@@ -240,29 +240,30 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         posting_date = woocommerce_order.get("date_created")[:10]
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         delivery_date = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
-        so = frappe.get_doc({
-            "doctype": "Sales Order",
-            "naming_series": str(woocommerce_order.get("id")),
-            "woocommerce_order_id": woocommerce_order.get("id"),
-            "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
-            "customer": customer,
-            "customer_group": woocommerce_settings.customer_group,  # hard code group, as this was missing since v12
-            "delivery_date": delivery_date,
-            "company": woocommerce_settings.company,
-            "selling_price_list": woocommerce_settings.price_list,
-            "ignore_pricing_rule": 1,
-            "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
-            #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
-            # disabled discount as WooCommerce will send this both in the item rate and as discount
-            #"apply_discount_on": "Net Total",
-            #"discount_amount": flt(woocommerce_order.get("discount_total") or 0),
-            "currency": woocommerce_order.get("currency"),
-            "taxes_and_charges": tax_rules,
-            "customer_address": billing_address,
-            "shipping_address_name": shipping_address,
-            "posting_date": woocommerce_order.get("date_created")[:10],
-            "due_date": due_date
-        })
+so = frappe.get_doc({
+    "doctype": "Sales Order",
+    "naming_series": str(woocommerce_order.get("id")),
+    "woocommerce_order_id": woocommerce_order.get("id"),
+    "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
+    "customer": customer,
+    "customer_group": woocommerce_settings.customer_group,
+    "delivery_date": woocommerce_order.get("delivery_date"),  # Use WooCommerce delivery date
+    "company": woocommerce_settings.company,
+    "selling_price_list": woocommerce_settings.price_list,
+    "ignore_pricing_rule": 1,
+    "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
+    #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
+    # disabled discount as WooCommerce will send this both in the item rate and as discount
+    #"apply_discount_on": "Net Total",
+    #"discount_amount": flt(woocommerce_order.get("discount_total") or 0),
+    "currency": woocommerce_order.get("currency"),
+    "taxes_and_charges": tax_rules,
+    "customer_address": billing_address,
+    "shipping_address_name": shipping_address,
+    "posting_date": woocommerce_order.get("date_created")[:10],  # Use WooCommerce posting date
+    "due_date": woocommerce_order.get("due_date"),  # Use WooCommerce due date
+})
+
 
         so.flags.ignore_mandatory = True
         # Save and submit Sales Order

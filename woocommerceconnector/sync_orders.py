@@ -199,20 +199,11 @@ def get_country_name(code):
     return coutry_name
 
 
-def create_order(woocommerce_order, woocommerce_settings, company=None):
-    so = create_sales_order(woocommerce_order, woocommerce_settings, company)
-    # check if sales invoice should be created
-    if cint(woocommerce_settings.sync_sales_invoice) == 1:
-        create_sales_invoice(woocommerce_order, woocommerce_settings, so)
-
-    #Fix this -- add shipping stuff
-    #if woocommerce_order.get("fulfillments") and cint(woocommerce_settings.sync_delivery_note):
-        #create_delivery_note(woocommerce_order, woocommerce_settings, so)
-
 def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
     id = str(woocommerce_order.get("customer_id"))
     customer = frappe.get_all("Customer", filters=[["woocommerce_customer_id", "=", id]], fields=['name'])
     backup_customer = frappe.get_all("Customer", filters=[["woocommerce_customer_id", "=", "Guest of Order-ID: {0}".format(woocommerce_order.get("id"))]], fields=['name'])
+    
     if customer:
         customer = customer[0]['name']
     elif backup_customer:
@@ -221,6 +212,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         frappe.log_error("No customer found. This should never happen.")
 
     so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")
+    
     if not so:
         # get shipping/billing address
         shipping_address = get_customer_address_from_order('Shipping', woocommerce_order, customer)
@@ -228,59 +220,52 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
         # get applicable tax rule from configuration
         tax_rules = frappe.get_all("WooCommerce Tax Rule", filters={'currency': woocommerce_order.get("currency")}, fields=['tax_rule'])
+        
         if not tax_rules:
             # fallback: currency has no tax rule, try catch-all
             tax_rules = frappe.get_all("WooCommerce Tax Rule", filters={'currency': "%"}, fields=['tax_rule'])
+            
         if tax_rules:
             tax_rules = tax_rules[0]['tax_rule']
         else:
             tax_rules = ""
+        
         # get the current date
         today = datetime.today().strftime('%Y-%m-%d')
         posting_date = woocommerce_order.get("date_created")[:10]
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
         delivery_date = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
-so = frappe.get_doc({
-    "doctype": "Sales Order",
-    "naming_series": str(woocommerce_order.get("id")),
-    "woocommerce_order_id": woocommerce_order.get("id"),
-    "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
-    "customer": customer,
-    "customer_group": woocommerce_settings.customer_group,
-    "delivery_date": woocommerce_order.get("delivery_date"),  # Use WooCommerce delivery date
-    "company": woocommerce_settings.company,
-    "selling_price_list": woocommerce_settings.price_list,
-    "ignore_pricing_rule": 1,
-    "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
-    #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
-    # disabled discount as WooCommerce will send this both in the item rate and as discount
-    #"apply_discount_on": "Net Total",
-    #"discount_amount": flt(woocommerce_order.get("discount_total") or 0),
-    "currency": woocommerce_order.get("currency"),
-    "taxes_and_charges": tax_rules,
-    "customer_address": billing_address,
-    "shipping_address_name": shipping_address,
-    "posting_date": woocommerce_order.get("date_created")[:10],  # Use WooCommerce posting date
-    "due_date": woocommerce_order.get("due_date"),  # Use WooCommerce due date
-})
+        
+        # Create Sales Order
+        so = frappe.get_doc({
+            "doctype": "Sales Order",
+            "naming_series": str(woocommerce_order.get("id")),
+            "woocommerce_order_id": woocommerce_order.get("id"),
+            "woocommerce_payment_method": woocommerce_order.get("payment_method_title"),
+            "customer": customer,
+            "customer_group": woocommerce_settings.customer_group,
+            "delivery_date": delivery_date,
+            "company": woocommerce_settings.company,
+            "selling_price_list": woocommerce_settings.price_list,
+            "ignore_pricing_rule": 1,
+            "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
+            #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
+            # disabled discount as WooCommerce will send this both in the item rate and as discount
+            #"apply_discount_on": "Net Total",
+            #"discount_amount": flt(woocommerce_order.get("discount_total") or 0),
+            "currency": woocommerce_order.get("currency"),
+            "taxes_and_charges": tax_rules,
+            "customer_address": billing_address,
+            "shipping_address_name": shipping_address,
+            "posting_date": posting_date,
+            "due_date": due_date
+        })
 
-
-        so.flags.ignore_mandatory = True
         # Save and submit Sales Order
+        so.flags.ignore_mandatory = True
         so.save(ignore_permissions=True)
-        #Removing this turns off saving order. it'll save as Draft 
-        #so.submit()
-
-
-        #if woocommerce_order.get("status") == "on-hold":
-        #    so.save(ignore_permissions=True)
-        #elif woocommerce_order.get("status") in ("cancelled", "refunded", "failed"):
-        #    so.save(ignore_permissions=True)
-        #    so.submit()
-        #    so.cancel()
-        #else:
-        #    so.save(ignore_permissions=True)
-        #    so.submit()
+        # Removing this turns off saving order. it'll save as Draft 
+        # so.submit()
 
     else:
         so = frappe.get_doc("Sales Order", so)
@@ -289,6 +274,7 @@ so = frappe.get_doc({
     make_woocommerce_log(title="create sales order", status="Success", method="create_sales_order",
             message= "create sales_order",request_data=woocommerce_order, exception=False)
     return so
+
 
 def get_customer_address_from_order(type, woocommerce_order, customer):
     address_record = woocommerce_order[type.lower()]

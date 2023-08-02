@@ -287,14 +287,20 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
 def get_customer_address_from_order(type, woocommerce_order, customer):
     address_record = woocommerce_order[type.lower()]
-    address_name = frappe.db.get_value("Address", {"woocommerce_address_id": type, "address_line1": address_record.get("address_1"), "woocommerce_company_name": address_record.get("company") or ''}, "name")
+    address_name = frappe.db.get_value("Address", {
+        "woocommerce_address_id": type,
+        "address_line1": address_record.get("address_1"),
+        "woocommerce_company_name": address_record.get("company") or ''
+    }, "name")
+
     if not address_name:
         country = get_country_name(address_record.get("country"))
         if not frappe.db.exists("Country", country):
             country = "Switzerland"
-        try :
-            address_name = frappe.get_doc({
-                "doctype": "Address",
+        
+        try:
+            address_doc = frappe.new_doc("Address")
+            address_doc.update({
                 "woocommerce_address_id": type,
                 "woocommerce_company_name": address_record.get("company") or '',
                 "address_title": customer,
@@ -311,14 +317,16 @@ def get_customer_address_from_order(type, woocommerce_order, customer):
                     "link_doctype": "Customer",
                     "link_name": customer
                 }]
-            }).insert()
-            address_name = address_name.name
-
+            })
+            address_doc.insert()
+            address_name = address_doc.name
         except Exception as e:
-            make_woocommerce_log(title=e, status="Error", method="create_customer_address", message=frappe.get_traceback(),
-                    request_data=woocommerce_customer, exception=True)
+            make_woocommerce_log(title=str(e), status="Error", method="create_customer_address", 
+                                 message=frappe.get_traceback(),
+                                 request_data=woocommerce_order, exception=True)
 
     return address_name
+
 
 def create_sales_invoice(woocommerce_order, woocommerce_settings, so):
     if not frappe.db.get_value("Sales Invoice", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")\

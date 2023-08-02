@@ -34,15 +34,12 @@ def sync_woocommerce_orders():
     max_order_age_days = 90
     max_order_age = datetime.now() - timedelta(days=max_order_age_days)
     
-    # Loop through WooCommerce order statuses for import
-    for woocommerce_order_status in woocommerce_order_status_for_import:
-        # Loop through WooCommerce orders with the current status
-        for woocommerce_order in get_woocommerce_orders(woocommerce_order_status):
-            # Convert order date to datetime object
-            order_date = datetime.strptime(woocommerce_order.get("date_created"), "%Y-%m-%dT%H:%M:%S")
-            
-            if order_date < max_order_age:
-                continue
+# Loop through WooCommerce order statuses for import
+for woocommerce_order_status in woocommerce_order_status_for_import:
+    # Loop through WooCommerce orders with the current status
+    for woocommerce_order in get_woocommerce_orders(woocommerce_order_status):
+        # Your synchronization logic here
+            continue
             
             # Check if Sales Order already exists for the WooCommerce order
             so = frappe.db.get_value("Sales Order", {"woocommerce_order_id": woocommerce_order.get("id")}, "name")

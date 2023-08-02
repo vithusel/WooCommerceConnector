@@ -30,8 +30,8 @@ def sync_woocommerce_orders():
     if not len(woocommerce_order_status_for_import) > 0:
         woocommerce_order_status_for_import = ['processing']
     
-    # Set maximum order age to 20 days from current date and time
-    max_order_age_days = 20
+    # Set maximum order age to 20 (default) days from current date and time
+    max_order_age_days = 90
     max_order_age = datetime.now() - timedelta(days=max_order_age_days)
     
     # Loop through WooCommerce order statuses for import

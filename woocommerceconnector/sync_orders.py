@@ -236,6 +236,19 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         posting_date = woocommerce_order.get("date_created")[:10]
         due_date = (datetime.strptime(posting_date, '%Y-%m-%d') + timedelta(days=90)).strftime('%Y-%m-%d')
         delivery_date = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=90)).strftime('%Y-%m-%d')
+        items = []
+
+        # Check if the "key" is "Brain" and process the SKUs
+        if woocommerce_order.get("key") == "Brain":
+            items_list = woocommerce_order.get("value").split("|")
+            for item in items_list:
+                items.append({
+                    "item_code": item,
+                    "qty": 1,  # You can set the quantity as needed
+                    "rate": 0,  # You can set the rate as needed
+                    "warehouse": woocommerce_settings.default_warehouse  # Set the default warehouse
+                })
+
         so = frappe.get_doc({
             "doctype": "Sales Order",
             "naming_series": str(woocommerce_order.get("id")),
@@ -247,11 +260,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "company": woocommerce_settings.company,
             "selling_price_list": woocommerce_settings.price_list,
             "ignore_pricing_rule": 1,
-            "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
-            #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
-            # disabled discount as WooCommerce will send this both in the item rate and as discount
-            #"apply_discount_on": "Net Total",
-            #"discount_amount": flt(woocommerce_order.get("discount_total") or 0),
+            "items": items,
             "currency": woocommerce_order.get("currency"),
             "taxes_and_charges": tax_rules,
             "customer_address": billing_address,
@@ -265,7 +274,6 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         so.save(ignore_permissions=True)
         #Removing this turns off saving order. it'll save as Draft 
         #so.submit()
-
 
         #if woocommerce_order.get("status") == "on-hold":
         #    so.save(ignore_permissions=True)
@@ -282,8 +290,9 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
 
     frappe.db.commit()
     make_woocommerce_log(title="create sales order", status="Success", method="create_sales_order",
-            message= "create sales_order",request_data=woocommerce_order, exception=False)
+            message= "create_sales_order",request_data=woocommerce_order, exception=False)
     return so
+
 
 def get_customer_address_from_order(type, woocommerce_order, customer):
     address_record = woocommerce_order[type.lower()]

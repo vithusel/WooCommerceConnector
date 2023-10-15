@@ -810,24 +810,36 @@ def add_w_id_to_erp():
     frappe.db.sql(purge_ids)
     frappe.db.commit()
 
-    # loop through all items on WooCommerce and get their IDs (matched by barcode)
+    # loop through all items on WooCommerce and get their IDs (matched by SKU)
     woo_items = get_woocommerce_items()
     make_woocommerce_log(title="Syncing IDs", status="Started", method="add_w_id_to_erp", message='Item: {0}'.format(woo_items),
         request_data={}, exception=True)
     for woocommerce_item in woo_items:
+        sku = woocommerce_item.get("sku")
         update_item = """UPDATE `tabItem`
             SET `woocommerce_product_id` = '{0}'
-            WHERE `barcode` = '{1}';""".format(woocommerce_item.get("id"), woocommerce_item.get("sku"))
+            WHERE `sku` = '{1}';""".format(woocommerce_item.get("id"), sku)
         frappe.db.sql(update_item)
         frappe.db.commit()
+
+        # Log the comparison and change for the current item
+        comparison_log = "Synced WooCommerce Product ID for SKU: {0} (WooCommerce ID: {1})".format(sku, woocommerce_item.get("id"))
+        make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=comparison_log, request_data={}, exception=True)
+
         for woocommerce_variant in get_woocommerce_item_variants(woocommerce_item.get("id")):
+            variant_sku = woocommerce_variant.get("sku")
             update_variant = """UPDATE `tabItem`
                 SET `woocommerce_variant_id` = '{0}', `woocommerce_product_id` = '{1}'
-                WHERE `barcode` = '{2}';""".format(woocommerce_variant.get("id"), woocommerce_item.get("id"), woocommerce_variant.get("sku"))
+                WHERE `sku` = '{2}';""".format(woocommerce_variant.get("id"), woocommerce_item.get("id"), variant_sku)
             frappe.db.sql(update_variant)
             frappe.db.commit()
-    make_woocommerce_log(title="IDs synced", status="Success", method="add_w_id_to_erp", message={},
-        request_data={}, exception=True)
+
+            # Log the comparison and change for the current variant
+            comparison_log = "Synced WooCommerce Variant ID for SKU: {0} (WooCommerce ID: {1})".format(variant_sku, woocommerce_variant.get("id"))
+            make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=comparison_log, request_data={}, exception=True)
+
+    make_woocommerce_log(title="IDs synced", status="Success", method="add_w_id_to_erp", message="Syncing IDs completed", request_data={}, exception=True)
+
 
 def rewrite_stock_uom_from_wc_unit():
     woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")

@@ -817,34 +817,26 @@ def add_w_id_to_erp():
     make_woocommerce_log(title="Purging IDs", status="Success", method="add_w_id_to_erp", message="Purged existing WooCommerce IDs", request_data={}, exception=True)
 
     # Loop through all items on WooCommerce and get their IDs (matched by SKU)
-    woo_items = get_woocommerce_items()
-    make_woocommerce_log(title="Getting WooCommerce Items", status="Success", method="add_w_id_to_erp", message='Fetched {0} WooCommerce items'.format(len(woo_items)), request_data={}, exception=True)
-    
-    for woocommerce_item in woo_items:
-        sku = woocommerce_item.get("sku")
-        woocommerce_id = woocommerce_item.get("id")
-        update_item = """UPDATE `tabItem`
-            SET `woocommerce_product_id` = '{0}'
-            WHERE `sku` = '{1}';""".format(woocommerce_id, sku)
-        frappe.db.sql(update_item)
-        frappe.db.commit()
+    woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
+    # warehouse = 'YourWarehouse'  # Replace with the actual warehouse name
 
-        # Log the comparison and change for the current item
-        comparison_log = "Synced WooCommerce Product ID for SKU: {0} (WooCommerce ID: {1})".format(sku, woocommerce_id)
-        make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=comparison_log, request_data={}, exception=True)
+    woocommerce_item_list = []
+    sync_woocommerce_items(warehouse, woocommerce_item_list)
 
-        for woocommerce_variant in get_woocommerce_item_variants(woocommerce_id):
-            variant_sku = woocommerce_variant.get("sku")
-            variant_id = woocommerce_variant.get("id")
-            update_variant = """UPDATE `tabItem`
-                SET `woocommerce_variant_id` = '{0}', `woocommerce_product_id` = '{1}'
-                WHERE `sku` = '{2}';""".format(variant_id, woocommerce_id, variant_sku)
-            frappe.db.sql(update_variant)
-            frappe.db.commit()
+    for woocommerce_item in woocommerce_item_list:
+        try:
+            make_item(warehouse, woocommerce_item, woocommerce_item_list)
 
-            # Log the comparison and change for the current variant
-            variant_comparison_log = "Synced WooCommerce Variant ID for SKU: {0} (WooCommerce ID: {1})".format(variant_sku, variant_id)
-            make_woocommerce_log(title="Synced Variant ID", status="Success", method="add_w_id_to_erp", message=variant_comparison_log, request_data={}, exception=True)
+        except woocommerceError as e:
+            make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
+                request_data=woocommerce_item, exception=True)
+
+        except Exception as e:
+            if e.args[0] and e.args[0] == 402:
+                raise e
+            else:
+                make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
+                    request_data=woocommerce_item, exception=True)
 
     # Log the completion of the synchronization process
     make_woocommerce_log(title="IDs synced", status="Success", method="add_w_id_to_erp", message="Syncing IDs completed", request_data={}, exception=True)

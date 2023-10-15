@@ -817,29 +817,31 @@ def add_w_id_to_erp():
     make_woocommerce_log(title="Purging IDs", status="Success", method="add_w_id_to_erp", message="Purged existing WooCommerce IDs", request_data={}, exception=True)
 
     # Loop through all items on WooCommerce and get their IDs (matched by SKU)
-    woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
-    # warehouse = 'YourWarehouse'  # Replace with the actual warehouse name
+    woocommerce_items = get_woocommerce_items()
+    num_items_detected = len(woocommerce_items)
+    
+    # Log the number of items detected in WooCommerce
+    detection_log = f"Detected {num_items_detected} items in WooCommerce"
+    make_woocommerce_log(title="Items Detected", status="Info", method="add_w_id_to_erp", message=detection_log, request_data={}, exception=False)
 
-    woocommerce_item_list = []
-    sync_woocommerce_items(warehouse, woocommerce_item_list)
+    for woocommerce_item in woocommerce_items:
+        sku = woocommerce_item.get("sku")
+        woocommerce_id = woocommerce_item.get("id")
 
-    for woocommerce_item in woocommerce_item_list:
-        try:
-            make_item(warehouse, woocommerce_item, woocommerce_item_list)
+        # Update all items with matching SKUs
+        update_items_query = f"""UPDATE `tabItem`
+            SET `woocommerce_product_id` = '{woocommerce_id}'
+            WHERE `sku` = '{sku}';"""
+        frappe.db.sql(update_items_query)
+        frappe.db.commit()
 
-        except woocommerceError as e:
-            make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
-                request_data=woocommerce_item, exception=True)
-
-        except Exception as e:
-            if e.args[0] and e.args[0] == 402:
-                raise e
-            else:
-                make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
-                    request_data=woocommerce_item, exception=True)
+        # Log the update for the current item
+        update_log = f"Synced WooCommerce Product ID ({woocommerce_id}) for SKU: {sku}"
+        make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=update_log, request_data={}, exception=True)
 
     # Log the completion of the synchronization process
     make_woocommerce_log(title="IDs synced", status="Success", method="add_w_id_to_erp", message="Syncing IDs completed", request_data={}, exception=True)
+
 
 
 

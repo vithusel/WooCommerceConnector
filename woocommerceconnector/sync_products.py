@@ -804,41 +804,51 @@ def get_product_update_dict_and_resource(woocommerce_product_id, woocommerce_var
     return item_data, resource
 
 def add_w_id_to_erp():
-    # purge WooCommerce IDs so that there cannot be any conflict
+    # Log the start of the synchronization process
+    make_woocommerce_log(title="Syncing IDs", status="Started", method="add_w_id_to_erp", message="Starting synchronization process", request_data={}, exception=True)
+
+    # Purge WooCommerce IDs so that there cannot be any conflict
     purge_ids = """UPDATE `tabItem`
             SET `woocommerce_product_id` = NULL, `woocommerce_variant_id` = NULL;"""
     frappe.db.sql(purge_ids)
     frappe.db.commit()
 
-    # loop through all items on WooCommerce and get their IDs (matched by SKU)
+    # Log the purging step
+    make_woocommerce_log(title="Purging IDs", status="Success", method="add_w_id_to_erp", message="Purged existing WooCommerce IDs", request_data={}, exception=True)
+
+    # Loop through all items on WooCommerce and get their IDs (matched by SKU)
     woo_items = get_woocommerce_items()
-    make_woocommerce_log(title="Syncing IDs", status="Started", method="add_w_id_to_erp", message='Item: {0}'.format(woo_items),
-        request_data={}, exception=True)
+    make_woocommerce_log(title="Getting WooCommerce Items", status="Success", method="add_w_id_to_erp", message='Fetched {0} WooCommerce items'.format(len(woo_items)), request_data={}, exception=True)
+    
     for woocommerce_item in woo_items:
         sku = woocommerce_item.get("sku")
+        woocommerce_id = woocommerce_item.get("id")
         update_item = """UPDATE `tabItem`
             SET `woocommerce_product_id` = '{0}'
-            WHERE `sku` = '{1}';""".format(woocommerce_item.get("id"), sku)
+            WHERE `sku` = '{1}';""".format(woocommerce_id, sku)
         frappe.db.sql(update_item)
         frappe.db.commit()
 
         # Log the comparison and change for the current item
-        comparison_log = "Synced WooCommerce Product ID for SKU: {0} (WooCommerce ID: {1})".format(sku, woocommerce_item.get("id"))
+        comparison_log = "Synced WooCommerce Product ID for SKU: {0} (WooCommerce ID: {1})".format(sku, woocommerce_id)
         make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=comparison_log, request_data={}, exception=True)
 
-        for woocommerce_variant in get_woocommerce_item_variants(woocommerce_item.get("id")):
+        for woocommerce_variant in get_woocommerce_item_variants(woocommerce_id):
             variant_sku = woocommerce_variant.get("sku")
+            variant_id = woocommerce_variant.get("id")
             update_variant = """UPDATE `tabItem`
                 SET `woocommerce_variant_id` = '{0}', `woocommerce_product_id` = '{1}'
-                WHERE `sku` = '{2}';""".format(woocommerce_variant.get("id"), woocommerce_item.get("id"), variant_sku)
+                WHERE `sku` = '{2}';""".format(variant_id, woocommerce_id, variant_sku)
             frappe.db.sql(update_variant)
             frappe.db.commit()
 
             # Log the comparison and change for the current variant
-            comparison_log = "Synced WooCommerce Variant ID for SKU: {0} (WooCommerce ID: {1})".format(variant_sku, woocommerce_variant.get("id"))
-            make_woocommerce_log(title="Synced ID", status="Success", method="add_w_id_to_erp", message=comparison_log, request_data={}, exception=True)
+            variant_comparison_log = "Synced WooCommerce Variant ID for SKU: {0} (WooCommerce ID: {1})".format(variant_sku, variant_id)
+            make_woocommerce_log(title="Synced Variant ID", status="Success", method="add_w_id_to_erp", message=variant_comparison_log, request_data={}, exception=True)
 
+    # Log the completion of the synchronization process
     make_woocommerce_log(title="IDs synced", status="Success", method="add_w_id_to_erp", message="Syncing IDs completed", request_data={}, exception=True)
+
 
 
 def rewrite_stock_uom_from_wc_unit():

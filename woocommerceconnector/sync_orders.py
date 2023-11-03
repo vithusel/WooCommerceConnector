@@ -389,10 +389,15 @@ def get_order_items(order_items, woocommerce_settings):
     return items
 
 def get_item_code(woocommerce_item):
-        item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
+    if cint(woocommerce_item.get("variation_id")) > 0:
+        # variation
+        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("variation_id")}, "item_code")
+    else:
+        # single
+        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("sku")}, "item_code")
 
     return item_code
-
+    
 def get_order_taxes(woocommerce_order, woocommerce_settings):
     taxes = []
     for tax in woocommerce_order.get("tax_lines"):

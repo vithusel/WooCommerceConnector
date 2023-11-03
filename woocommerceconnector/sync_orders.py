@@ -380,7 +380,7 @@ def get_order_items(order_items, woocommerce_settings):
     for woocommerce_item in order_items:
         item_code = get_item_code(woocommerce_item)
         items.append({
-            "item_code": woocommerce_item.get("product_id")
+            "item_code": woocommerce_item.get("product_id"),
             "rate": woocommerce_item.get("price"),
             "delivery_date": nowdate(),
             "qty": woocommerce_item.get("quantity"),

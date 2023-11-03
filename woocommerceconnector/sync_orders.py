@@ -247,7 +247,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
             "company": woocommerce_settings.company,
             "selling_price_list": woocommerce_settings.price_list,
             "ignore_pricing_rule": 1,
-            "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings),
+            "items": get_order_items(woocommerce_order.get("line_items"), woocommerce_settings, sku_field),
             #"taxes": get_order_taxes(woocommerce_order, woocommerce_settings),
             # disabled discount as WooCommerce will send this both in the item rate and as discount
             #"apply_discount_on": "Net Total",
@@ -378,7 +378,7 @@ def get_fulfillment_items(dn_items, fulfillment_items, woocommerce_settings):
 def get_order_items(order_items, woocommerce_settings):
     items = []
     for woocommerce_item in order_items:
-        item_code = get_item_code(woocommerce_item)
+        item_code = get_item_code(woocommerce_item, sku_field)
         items.append({
             "item_code": item_code,
             "rate": woocommerce_item.get("price"),

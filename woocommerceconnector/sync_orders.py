@@ -389,7 +389,7 @@ def get_order_items(order_items, woocommerce_settings):
     return items
 
 def get_item_code(woocommerce_item):
-        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("sku")}, "item_code")
+        item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
 
     return item_code
 

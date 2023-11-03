@@ -378,7 +378,7 @@ def get_fulfillment_items(dn_items, fulfillment_items, woocommerce_settings):
 def get_order_items(order_items, woocommerce_settings):
     items = []
     for woocommerce_item in order_items:
-        item_code = get_item_code(woocommerce_item)
+        item_code = get_item_code_by_sku(woocommerce_item.get("sku"))
         items.append({
             "item_code": item_code,
             "rate": woocommerce_item.get("price"),

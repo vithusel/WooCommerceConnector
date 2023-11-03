@@ -387,10 +387,10 @@ def get_order_items(order_items, woocommerce_settings):
             "warehouse": woocommerce_settings.warehouse
         })
 
-        # Add logging for each item processed
+        # Add logging for each item processed with a valid status
         make_woocommerce_log(
             title="Item Processing",
-            status="Info",
+            status="Success",  # Change "Info" to a valid status, e.g., "Success"
             method="get_order_items",
             message=f"Processing item with item_code: {item_code}",
             request_data={"woocommerce_item": woocommerce_item},
@@ -407,10 +407,10 @@ def get_item_code(woocommerce_item):
         # single
         item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
 
-    # Add logging for item code retrieval
+    # Add logging for item code retrieval with a valid status
     make_woocommerce_log(
         title="Item Code Retrieval",
-        status="Info",
+        status="Success",  # Change "Info" to a valid status, e.g., "Success"
         method="get_item_code",
         message=f"Retrieved item_code: {item_code} for woocommerce_item: {woocommerce_item}",
         request_data={"woocommerce_item": woocommerce_item, "item_code": item_code},
@@ -418,6 +418,7 @@ def get_item_code(woocommerce_item):
     )
 
     return item_code
+
 
     
 def get_order_taxes(woocommerce_order, woocommerce_settings):

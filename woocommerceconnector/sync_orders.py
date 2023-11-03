@@ -380,12 +380,23 @@ def get_order_items(order_items, woocommerce_settings):
     for woocommerce_item in order_items:
         item_code = get_item_code(woocommerce_item)
         items.append({
-            "item_code": woocommerce_item.get("product_id"),
+            "item_code": item_code,
             "rate": woocommerce_item.get("price"),
             "delivery_date": nowdate(),
             "qty": woocommerce_item.get("quantity"),
             "warehouse": woocommerce_settings.warehouse
         })
+
+        # Add logging for each item processed
+        make_woocommerce_log(
+            title="Item Processing",
+            status="Info",
+            method="get_order_items",
+            message=f"Processing item with item_code: {item_code}",
+            request_data={"woocommerce_item": woocommerce_item},
+            exception=False
+        )
+
     return items
 
 def get_item_code(woocommerce_item):
@@ -396,7 +407,18 @@ def get_item_code(woocommerce_item):
         # single
         item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
 
+    # Add logging for item code retrieval
+    make_woocommerce_log(
+        title="Item Code Retrieval",
+        status="Info",
+        method="get_item_code",
+        message=f"Retrieved item_code: {item_code} for woocommerce_item: {woocommerce_item}",
+        request_data={"woocommerce_item": woocommerce_item, "item_code": item_code},
+        exception=False
+    )
+
     return item_code
+
     
 def get_order_taxes(woocommerce_order, woocommerce_settings):
     taxes = []

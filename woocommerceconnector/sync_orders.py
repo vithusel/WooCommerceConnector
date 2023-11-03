@@ -378,7 +378,7 @@ def get_fulfillment_items(dn_items, fulfillment_items, woocommerce_settings):
 def get_order_items(order_items, woocommerce_settings):
     items = []
     for woocommerce_item in order_items:
-        item_code = get_item_code_by_sku(woocommerce_item.get("sku"))
+        item_code = get_item_code(woocommerce_item)
         items.append({
             "item_code": item_code,
             "rate": woocommerce_item.get("price"),
@@ -388,13 +388,15 @@ def get_order_items(order_items, woocommerce_settings):
         })
     return items
 
-def get_item_code(woocommerce_item):
-    if cint(woocommerce_item.get("variation_id")) > 0:
-        # variation
-        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("variation_id")}, "item_code")
+def get_item_code(woocommerce_item, sku_field):
+    # Assuming you have a custom field in your Item doctype to store SKU
+    sku = woocommerce_item.get(sku_field)
+
+    if sku:
+        # Look up the item code based on SKU
+        item_code = frappe.db.get_value("Item", {"woocommerce_sku": sku}, "item_code")
     else:
-        # single
-        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("product_id")}, "item_code")
+        item_code = None
 
     return item_code
 

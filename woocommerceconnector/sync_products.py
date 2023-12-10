@@ -28,6 +28,11 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
         exception=False
     )
 
+    # Dump relevant information
+    print("Dump before sync_from_woocommerce: woocommerce_settings =", woocommerce_settings)
+    print("Dump before sync_from_woocommerce: price_list =", price_list)
+    print("Dump before sync_from_woocommerce: warehouse =", warehouse)
+
     if sync_from_woocommerce:
         sync_woocommerce_items(warehouse, woocommerce_item_list)
 
@@ -41,13 +46,19 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
 
     # Optionally, add a log entry indicating the completion of synchronization
     make_woocommerce_log(
-        title="Sync Completed",
-        status="Error",
+        title="Product Sync Completed",
+        status="Success",
         method="sync_products",
         message="Product synchronization process has completed.",
         request_data=None,
         exception=False
     )
+
+    # Dump relevant information after synchronization
+    print("Dump after synchronization: woocommerce_item_list =", woocommerce_item_list)
+    print("Dump after synchronization: frappe.local.form_dict.count_dict =", frappe.local.form_dict.count_dict)
+    print("Dump after synchronization: woocommerce_settings =", woocommerce_settings)
+
 
 
 def sync_woocommerce_items(warehouse, woocommerce_item_list):

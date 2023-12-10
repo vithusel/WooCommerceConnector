@@ -88,29 +88,29 @@ def valid_customer_and_product(woocommerce_order):
     if woocommerce_order.get("status").lower() == "cancelled":
         return False
     warehouse = frappe.get_doc("WooCommerce Config", "WooCommerce Config").warehouse
-	
-	# old function item based on sku
-    # for item in woocommerce_order.get("line_items"):
-        # if item.get("sku"):
-            # if not frappe.db.get_value("Item", {"barcode": item.get("sku")}, "item_code"):
-                # make_woocommerce_log(title="Item missing in ERPNext!", status="Error", method="valid_customer_and_product", message="Item with sku {0} is missing in ERPNext! The Order {1} will not be imported! For details of order see below".format(item.get("sku"), woocommerce_order.get("id")),
-                    # request_data=woocommerce_order, exception=True)
-                # return False
-        # else:
-            # make_woocommerce_log(title="Item barcode missing in WooCommerce!", status="Error", method="valid_customer_and_product", message="Item barcode is missing in WooCommerce! The Order {0} will not be imported! For details of order see below".format(woocommerce_order.get("id")),
-                # request_data=woocommerce_order, exception=True)
-            # return False
-			
-	# new function item based on product id
+
+    # Validate items based on SKU (WooCommerce SKU vs ERPNext item_code)
     for item in woocommerce_order.get("line_items"):
-        if item.get("product_id"):
-            if not frappe.db.get_value("Item", {"woocommerce_product_id": item.get("product_id")}, "item_code"):
-                make_woocommerce_log(title="Item missing in ERPNext!", status="Error", method="valid_customer_and_product", message="Item with id {0} is missing in ERPNext! The Order {1} will not be imported! For details of order see below".format(item.get("product_id"), woocommerce_order.get("id")),
-                    request_data=woocommerce_order, exception=True)
+        if item.get("sku"):
+            if not frappe.db.get_value("Item", {"item_code": item.get("sku")}, "item_code"):
+                make_woocommerce_log(
+                    title="Item missing in ERPNext!",
+                    status="Error",
+                    method="valid_customer_and_product",
+                    message="Item with SKU {0} is missing in ERPNext! The Order {1} will not be imported! For details of the order, see below".format(item.get("sku"), woocommerce_order.get("id")),
+                    request_data=woocommerce_order,
+                    exception=True
+                )
                 return False
         else:
-            make_woocommerce_log(title="Item id missing in WooCommerce!", status="Error", method="valid_customer_and_product", message="Item id is missing in WooCommerce! The Order {0} will not be imported! For details of order see below".format(woocommerce_order.get("product_id")),
-                request_data=woocommerce_order, exception=True)
+            make_woocommerce_log(
+                title="Item SKU missing in WooCommerce!",
+                status="Error",
+                method="valid_customer_and_product",
+                message="Item SKU is missing in WooCommerce! The Order {0} will not be imported! For details of the order, see below".format(woocommerce_order.get("id")),
+                request_data=woocommerce_order,
+                exception=True
+            )
             return False
     
     try:
@@ -119,32 +119,34 @@ def valid_customer_and_product(woocommerce_order):
         customer_id = 0
         
     if customer_id > 0:
-        if not frappe.db.get_value("Customer", {"woocommerce_customer_id": str(customer_id)}, "name", False,True):
+        if not frappe.db.get_value("Customer", {"woocommerce_customer_id": str(customer_id)}, "name", False, True):
             woocommerce_customer = get_woocommerce_customer(customer_id)
 
-            #Customer may not have billing and shipping address on file, pull it from the order
+            # Customer may not have billing and shipping address on file, pull it from the order
             if woocommerce_customer["billing"].get("address_1") == "":
                 woocommerce_customer["billing"] = woocommerce_order["billing"]
-                woocommerce_customer["billing"]["country"] = get_country_from_code( woocommerce_customer.get("billing").get("country") )
+                woocommerce_customer["billing"]["country"] = get_country_from_code(woocommerce_customer.get("billing").get("country"))
 
                 if woocommerce_customer["shipping"].get("address_1") == "":
                     woocommerce_customer["shipping"] = woocommerce_order["shipping"]
-                    woocommerce_customer["shipping"]["country"] = get_country_from_code( woocommerce_customer.get("shipping").get("country") )
-            
+                    woocommerce_customer["shipping"]["country"] = get_country_from_code(woocommerce_customer.get("shipping").get("country"))
+
             create_customer(woocommerce_customer, woocommerce_customer_list=[])
 
-    if customer_id == 0: # we are dealing with a guest customer 
-        # woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
-        # if not woocommerce_settings.default_customer:
-            # make_woocommerce_log(title="Missing Default Customer", status="Error", method="valid_customer_and_product", message="Missing Default Customer in WooCommerce Config",
-                # request_data=woocommerce_order, exception=True)
-            # return False
-        if not frappe.db.get_value("Customer", {"woocommerce_customer_id": "Guest of Order-ID: {0}".format(woocommerce_order.get("id"))}, "name", False,True):
-            make_woocommerce_log(title="create new customer based on guest order", status="Started", method="valid_customer_and_product", message="creat new customer based on guest order",
-                request_data=woocommerce_order, exception=False)
+    if customer_id == 0:  # we are dealing with a guest customer 
+        if not frappe.db.get_value("Customer", {"woocommerce_customer_id": "Guest of Order-ID: {0}".format(woocommerce_order.get("id"))}, "name", False, True):
+            make_woocommerce_log(
+                title="Create new customer based on guest order",
+                status="Started",
+                method="valid_customer_and_product",
+                message="Create new customer based on guest order",
+                request_data=woocommerce_order,
+                exception=False
+            )
             create_new_customer_of_guest(woocommerce_order)
 
     return True
+
 
 def get_country_from_code(country_code):
     return frappe.db.get_value("Country", {"code": country_code}, "name")

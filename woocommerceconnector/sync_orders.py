@@ -380,46 +380,74 @@ def get_fulfillment_items(dn_items, fulfillment_items, woocommerce_settings):
 def get_order_items(order_items, woocommerce_settings):
     items = []
     for woocommerce_item in order_items:
-        item_code = get_item_code(woocommerce_item)
-        items.append({
-            "item_code": item_code,
-            "rate": woocommerce_item.get("price"),
-            "delivery_date": nowdate(),
-            "qty": woocommerce_item.get("quantity"),
-            "warehouse": woocommerce_settings.warehouse
-        })
+        try:
+            item_code = get_item_code(woocommerce_item)
+            items.append({
+                "item_code": item_code,
+                "rate": woocommerce_item.get("price"),
+                "delivery_date": nowdate(),
+                "qty": woocommerce_item.get("quantity"),
+                "warehouse": woocommerce_settings.warehouse
+            })
 
-        # Add logging for each item processed with a valid status
-        make_woocommerce_log(
-            title="Item Processing",
-            status="Success",  # Change "Info" to a valid status, e.g., "Success"
-            method="get_order_items",
-            message=f"Processing item with item_code: {item_code}",
-            request_data={"woocommerce_item": woocommerce_item},
-            exception=False
-        )
+            # Add logging for each item processed with a valid status
+            make_woocommerce_log(
+                title="Item Processing",
+                status="Success",
+                method="get_order_items",
+                message=f"Processing item with item_code: {item_code}",
+                request_data={"woocommerce_item": woocommerce_item},
+                exception=False
+            )
+
+        except Exception as e:
+            # Add logging for errors
+            make_woocommerce_log(
+                title="Item Processing",
+                status="Error",
+                method="get_order_items",
+                message=f"Error processing item with error: {str(e)}",
+                request_data={"woocommerce_item": woocommerce_item},
+                exception=True
+            )
 
     return items
 
 def get_item_code(woocommerce_item):
-    if cint(woocommerce_item.get("variation_id")) > 0:
-        # variation
-        item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("variation_id")}, "item_code")
-    else:
-        # single
-        item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
+    try:
+        if cint(woocommerce_item.get("variation_id")) > 0:
+            # variation
+            item_code = frappe.db.get_value("Item", {"woocommerce_product_id": woocommerce_item.get("variation_id")}, "item_code")
+        else:
+            # single
+            item_code = frappe.db.get_value("Item", {"item_code": woocommerce_item.get("sku")}, "item_code")
 
-    # Add logging for item code retrieval with a valid status
-    make_woocommerce_log(
-        title="Item Code Retrieval",
-        status="Success",  # Change "Info" to a valid status, e.g., "Success"
-        method="get_item_code",
-        message=f"Retrieved item_code: {item_code} for woocommerce_item: {woocommerce_item}",
-        request_data={"woocommerce_item": woocommerce_item, "item_code": item_code},
-        exception=False
-    )
+        # Add logging for item code retrieval with a valid status
+        make_woocommerce_log(
+            title="Item Code Retrieval",
+            status="Success",
+            method="get_item_code",
+            message=f"Retrieved item_code: {item_code} for woocommerce_item: {woocommerce_item}",
+            request_data={"woocommerce_item": woocommerce_item, "item_code": item_code},
+            exception=False
+        )
 
-    return item_code
+        return item_code
+
+    except Exception as e:
+        # Add logging for errors in item code retrieval
+        make_woocommerce_log(
+            title="Item Code Retrieval",
+            status="Error",
+            method="get_item_code",
+            message=f"Error retrieving item code with error: {str(e)} for woocommerce_item: {woocommerce_item}",
+            request_data={"woocommerce_item": woocommerce_item},
+            exception=True
+        )
+
+        # Raise the exception to propagate it up
+        raise e
+
 
 
     

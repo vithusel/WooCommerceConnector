@@ -21,7 +21,7 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
     # Add a log entry indicating the start of synchronization
     make_woocommerce_log(
         title="Sync Started",
-        status="Info",
+        status="Started",
         method="sync_products",
         message="Product synchronization process has started.",
         request_data=None,
@@ -42,7 +42,7 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
     # Optionally, add a log entry indicating the completion of synchronization
     make_woocommerce_log(
         title="Sync Completed",
-        status="Info",
+        status="Error",
         method="sync_products",
         message="Product synchronization process has completed.",
         request_data=None,

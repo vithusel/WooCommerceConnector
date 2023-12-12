@@ -522,12 +522,19 @@ def get_shipping_account_head(shipping):
 
 
 def get_tax_account_head(tax):
-    tax_title = tax.get("name").encode("utf-8") or tax.get("method_title").encode("utf-8")
+    tax_title = tax.get("name") or tax.get("method_title")
 
-    tax_account =  frappe.db.get_value("woocommerce Tax Account", \
-        {"parent": "WooCommerce Config", "woocommerce_tax": tax_title}, "tax_account")
+    # Ensure tax_title is a string
+    tax_title_str = str(tax_title)
+
+    tax_account = frappe.db.get_value(
+        "woocommerce Tax Account",
+        {"parent": "WooCommerce Config", "woocommerce_tax": tax_title_str},
+        "tax_account"
+    )
 
     if not tax_account:
-        frappe.throw("Tax Account not specified for woocommerce Tax {0}".format(tax.get("name")))
+        frappe.throw("Tax Account not specified for woocommerce Tax {0}".format(tax_title_str))
 
     return tax_account
+

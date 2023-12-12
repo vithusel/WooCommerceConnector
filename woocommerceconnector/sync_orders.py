@@ -527,14 +527,19 @@ def get_tax_account_head(tax):
     # Ensure tax_title is a string
     tax_title_str = str(tax_title)
 
-    tax_account = frappe.db.get_value(
-        "woocommerce Tax Account",
-        {"parent": "WooCommerce Config", "woocommerce_tax": tax_title_str},
-        "tax_account"
-    )
+    try:
+        tax_account = frappe.db.get_value(
+            "woocommerce Tax Account",
+            {"parent": "WooCommerce Config", "woocommerce_tax": tax_title_str},
+            "tax_account"
+        )
 
-    if not tax_account:
-        frappe.throw("Tax Account not specified for woocommerce Tax {0}".format(tax_title_str))
+        if not tax_account:
+            raise frappe.exceptions.ValidationError("Tax Account not specified for woocommerce Tax {0}".format(tax_title_str))
 
-    return tax_account
+        return tax_account
+    except frappe.exceptions.ValidationError as e:
+        # Catch the exception and handle it
+        error_message = e.message
+        frappe.throw(error_message)
 

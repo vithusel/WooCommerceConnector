@@ -540,6 +540,7 @@ def get_tax_account_head(tax):
         return tax_account
     except frappe.exceptions.ValidationError as e:
         # Catch the exception and handle it
-        error_message = e.message
+        error_message = str(e)
         frappe.throw(error_message)
+
 

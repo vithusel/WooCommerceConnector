@@ -459,29 +459,28 @@ def get_order_taxes(woocommerce_order, woocommerce_settings):
         rate = woocommerce_tax.get("rate")
         name = woocommerce_tax.get("name")
         
+        try:
+            account_head = get_tax_account_head(woocommerce_tax)
+        except Exception as e:
+            print(f"Error getting tax account head: {e}")
+            # Optionally, you can raise the exception again to stop further processing
+            raise
+
         taxes.append({
             "charge_type": "Actual",
-            "account_head": get_tax_account_head(woocommerce_tax),
+            "account_head": account_head,
             "description": "{0} - {1}%".format(name, rate),
             "rate": rate,
-            "tax_amount": flt(tax.get("tax_total") or 0) + flt(tax.get("shipping_tax_total") or 0), 
+            "tax_amount": flt(tax.get("tax_total") or 0) + flt(tax.get("shipping_tax_total") or 0),
             "included_in_print_rate": 0,
             "cost_center": woocommerce_settings.cost_center
         })
-    # old code with conditional brutto/netto prices
-    # taxes.append({
-        #     "charge_type": "On Net Total" if woocommerce_order.get("prices_include_tax") else "Actual",
-        #     "account_head": get_tax_account_head(woocommerce_tax),
-        #     "description": "{0} - {1}%".format(name, rate),
-        #     "rate": rate,
-        #     "tax_amount": flt(tax.get("tax_total") or 0) + flt(tax.get("shipping_tax_total") or 0), 
-        #     "included_in_print_rate": 1 if woocommerce_order.get("prices_include_tax") else 0,
-        #     "cost_center": woocommerce_settings.cost_center
-        # })
+
     taxes = update_taxes_with_fee_lines(taxes, woocommerce_order.get("fee_lines"), woocommerce_settings)
     taxes = update_taxes_with_shipping_lines(taxes, woocommerce_order.get("shipping_lines"), woocommerce_settings)
 
     return taxes
+
 
 def update_taxes_with_fee_lines(taxes, fee_lines, woocommerce_settings):
     for fee_charge in fee_lines:

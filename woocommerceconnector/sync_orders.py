@@ -510,15 +510,24 @@ def update_taxes_with_shipping_lines(taxes, shipping_lines, woocommerce_settings
 
 
 def get_shipping_account_head(shipping):
-        shipping_title = shipping.get("method_title").encode("utf-8")
+    shipping_title = str(shipping.get("method_title"))
 
-        shipping_account =  frappe.db.get_value("woocommerce Tax Account", \
-                {"parent": "WooCommerce Config", "woocommerce_tax": shipping_title}, "tax_account")
+    try:
+        shipping_account = frappe.db.get_value(
+            "woocommerce Tax Account",
+            {"parent": "WooCommerce Config", "woocommerce_tax": shipping_title},
+            "tax_account"
+        )
 
         if not shipping_account:
-                frappe.throw("Tax Account not specified for woocommerce shipping method  {0}".format(shipping.get("method_title")))
+            raise frappe.exceptions.ValidationError("Tax Account not specified for woocommerce shipping method {0}".format(shipping_title))
 
         return shipping_account
+    except frappe.exceptions.ValidationError as e:
+        # Catch the exception and handle it
+        error_message = str(e)
+        frappe.throw(error_message)
+
 
 
 def get_tax_account_head(tax):

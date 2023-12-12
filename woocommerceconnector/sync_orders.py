@@ -266,7 +266,7 @@ def create_sales_order(woocommerce_order, woocommerce_settings, company=None):
         # Save and submit Sales Order
         so.save(ignore_permissions=True)
         #Removing this turns off saving order. it'll save as Draft 
-        so.submit()
+        #so.submit()
 
 
         #if woocommerce_order.get("status") == "on-hold":

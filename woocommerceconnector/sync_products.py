@@ -34,12 +34,13 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
     print("Dump before sync_from_woocommerce: warehouse =", warehouse)
 
     if sync_from_woocommerce:
-        woocommerce_item_list = sync_woocommerce_items(warehouse)
+        # Pass an empty list as the argument to sync_woocommerce_items
+        woocommerce_item_list = sync_woocommerce_items(warehouse, [])
         # Capture the list of WooCommerce products as an error message
         error_message = "List of WooCommerce Products: {}".format(woocommerce_item_list)
         # Log the error message
         make_woocommerce_log(
-            title="WooCommerce Complete Products List",
+            title="WooCommerce Products List",
             status="Error",
             method="sync_products",
             message=error_message,

@@ -17,29 +17,95 @@ woocommerce_variants_attr_list = ["option1", "option2", "option3"]
 def sync_products(price_list, warehouse, sync_from_woocommerce=False):
     woocommerce_settings = frappe.get_doc("WooCommerce Config", "WooCommerce Config")
     woocommerce_item_list = []
+
+    # Add a log entry indicating the start of synchronization
+    make_woocommerce_log(
+        title="Sync Started",
+        status="Started",
+        method="sync_products",
+        message="Product synchronization process has started.",
+        request_data=None,
+        exception=False
+    )
+
+    # Dump relevant information
+    print("Dump before sync_from_woocommerce: woocommerce_settings =", woocommerce_settings)
+    print("Dump before sync_from_woocommerce: price_list =", price_list)
+    print("Dump before sync_from_woocommerce: warehouse =", warehouse)
+
     if sync_from_woocommerce:
         sync_woocommerce_items(warehouse, woocommerce_item_list)
+
     frappe.local.form_dict.count_dict["products"] = len(woocommerce_item_list)
+
     if woocommerce_settings.if_not_exists_create_item_to_woocommerce == 1:
         sync_erpnext_items(price_list, warehouse, woocommerce_item_list)
+
     if woocommerce_settings.rewrite_stock_uom_from_wc_unit == 1:
         rewrite_stock_uom_from_wc_unit()
 
+    # Optionally, add a log entry indicating the completion of synchronization
+    make_woocommerce_log(
+        title="Product Sync Completed",
+        status="Success",
+        method="sync_products",
+        message="Product synchronization process has completed.",
+        request_data=None,
+        exception=False
+    )
+
+    # Dump relevant information after synchronization
+    print("Dump after synchronization: woocommerce_item_list =", woocommerce_item_list)
+    print("Dump after synchronization: frappe.local.form_dict.count_dict =", frappe.local.form_dict.count_dict)
+    print("Dump after synchronization: woocommerce_settings =", woocommerce_settings)
+
+
+
 def sync_woocommerce_items(warehouse, woocommerce_item_list):
+        make_woocommerce_log(
+        title="Syncing items from WooCommerce",
+        status="Info",
+        method="sync_woocommerce_items",
+        message="Starting synchronization of items from WooCommerce...",
+        request_data=None,
+        exception=False
+    )
     for woocommerce_item in get_woocommerce_items():
         try:
             make_item(warehouse, woocommerce_item, woocommerce_item_list)
 
+            # Add a log entry for each processed product
+            make_woocommerce_log(
+                title="Product Processed",
+                status="Success",
+                method="sync_woocommerce_items",
+                message="Product processed successfully: {}".format(woocommerce_item.get("name")),
+                request_data=woocommerce_item,
+                exception=False
+            )
+
         except woocommerceError as e:
-            make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
-                request_data=woocommerce_item, exception=True)
+            make_woocommerce_log(
+                title="{0}".format(e),
+                status="Error",
+                method="sync_woocommerce_items",
+                message=frappe.get_traceback(),
+                request_data=woocommerce_item,
+                exception=True
+            )
 
         except Exception as e:
             if e.args[0] and e.args[0] == 402:
                 raise e
             else:
-                make_woocommerce_log(title="{0}".format(e), status="Error", method="sync_woocommerce_items", message=frappe.get_traceback(),
-                    request_data=woocommerce_item, exception=True)
+                make_woocommerce_log(
+                    title="{0}".format(e),
+                    status="Error",
+                    method="sync_woocommerce_items",
+                    message=frappe.get_traceback(),
+                    request_data=woocommerce_item,
+                    exception=True
+                )
 
 
 def make_item(warehouse, woocommerce_item, woocommerce_item_list):

@@ -62,6 +62,14 @@ def sync_products(price_list, warehouse, sync_from_woocommerce=False):
 
 
 def sync_woocommerce_items(warehouse, woocommerce_item_list):
+    make_woocommerce_log(
+        title="Syncing items from WooCommerce",
+        status="Info",
+        method="sync_woocommerce_items",
+        message="Starting synchronization of items from WooCommerce...",
+        request_data=None,
+        exception=False
+    )
     for woocommerce_item in get_woocommerce_items():
         try:
             make_item(warehouse, woocommerce_item, woocommerce_item_list)
